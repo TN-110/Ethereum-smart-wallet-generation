@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="zh">
+
+<head>
+    <meta charset="UTF-8">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>以太坊靓号钱包生成</title>
+    <link href="./css/bootstrap.min.css" rel="stylesheet">
+    <script src="./js/web3.min.js"></script>
+    <style>
+        body {
+            background-color: #F4F7FA;
+            /* 更轻、更明亮的背景色 */
+            color: #343A40;
+            /* 更深的字体颜色，增加对比 */
+            font-family: 'Open Sans', sans-serif;
+            /* 更现代的字体 */
+        }
+
+        .container {
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            /* 更明显的阴影 */
+            border-radius: 12px;
+            /* 更大的圆角 */
+            background-color: #ffffff;
+            padding: 30px;
+            margin-top: 30px;
+        }
+
+        .btn {
+            margin: 5px 0;
+            border: none;
+            /* 去除边框 */
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .btn-primary {
+            background-color: #0D6EFD;
+            /* 更鲜艳的主题色 */
+            border-color: #0D6EFD;
+        }
+
+        .btn-secondary {
+            background-color: #6c757d;
+            /* 辅助色 */
+            border-color: #6c757d;
+        }
+
+        .btn-danger {
+            background-color: #e3342f;
+            /* 警告色 */
+            border-color: #e3342f;
+        }
+
+        .btn:hover {
+            opacity: 0.85;
+            /* 统一hover效果，去除scale变化避免重复 */
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            /* 加深阴影 */
+        }
+
+        .card {
+            background-color: #ffffff;
+            /* 卡片背景色 */
+            border: none;
+            /* 去除边框，更加扁平化 */
+            margin-top: 20px;
+            border-radius: 8px;
+            /* 卡片圆角 */
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            /* 更深的卡片阴影 */
+            transition: transform 0.2s;
+            /* 添加过渡效果 */
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            /* 鼠标悬停时轻微上移 */
+        }
+
+        .alert {
+            background-color: #e9ecef;
+            color: #495057;
+            border-radius: 8px;
+        }
+
+        /* 增强输入框和按钮的视觉效果 */
+        .input-group>.form-control,
+        .input-group>.btn-outline-secondary {
+            border-color: #58a6ff;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container py-5">
+        <h2 class="mb-4 text-center">以太坊靓号钱包生成</h2>
+        <div class="row justify-content-center">
+            <div class="col-md-8">
+                <div class="input-group mb-3">
+                    <input type="text" id="matchContent" class="form-control" placeholder="匹配内容">
+                    <select id="matchPosition" class="form-select">
+                        <option value="any">任意</option>
+                        <option value="start">开头</option>
+                        <option value="end">结尾</option>
+                    </select>
+                    <input type="number" id="threadCount" class="form-control" placeholder="线程数"
+                        aria-describedby="threadCountHelp" value="">
+                    <button class="btn btn-outline-secondary" type="button" data-bs-toggle="tooltip"
+                        data-bs-placement="top" title="请根据自身设备进行设置，越大占用设备CPU越多">
+                        <a>😕</a>
+                    </button>
+                </div>
+                <div class="d-grid gap-2 d-md-flex justify-content-md-start">
+                    <button class="btn btn-primary" onclick="generateWallets()">生成钱包</button>
+                    <button class="btn btn-secondary" onclick="stopGenerating()">停止生成</button>
+                    <button class="btn btn-danger" onclick="clearInfo()">清空信息</button>
+                </div>
+                <div id="generatedCount" class="alert alert-info mt-3" role="alert">已生成: 0</div>
+                <div id="matchedCount" class="alert alert-success" role="alert">匹配成功: 0</div>
+                <div id="walletsInfo"></div>
+            </div>
+        </div>
+    </div>
+
+
+
+    <!-- 引入 Bootstrap JavaScript 库 -->
+    <script src="./js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        // 你的 JavaScript 代码，比如初始化工具提示
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl)
+        })
+    </script>
+
+
+    <script>
+        let globalGeneratedCount = 0;
+        let globalMatchedCount = 0;
+        let shouldContinue = true;
+
+        async function generateWallet(web3, matchPattern, position) {
+            while (shouldContinue) {
+                let account = web3.eth.accounts.create();
+                globalGeneratedCount++;
+                document.getElementById("generatedCount").innerText = `已生成: ${globalGeneratedCount}`;
+
+                let matchFound = false;
+
+                switch (position) {
+                    case 'start':
+                        matchFound = account.address.toLowerCase().startsWith(matchPattern);
+                        break;
+                    case 'end':
+                        matchFound = account.address.toLowerCase().endsWith(matchPattern);
+                        break;
+                    case 'any':
+                        matchFound = account.address.toLowerCase().includes(matchPattern);
+                        break;
+                }
+
+                if (matchFound) {
+                    globalMatchedCount++;
+                    document.getElementById("matchedCount").innerText = `匹配成功: ${globalMatchedCount}`;
+                    let walletInfoDiv = document.createElement("div");
+                    walletInfoDiv.innerHTML = `
+                    <div class="card mb-3">
+                        <div class="card-body">
+                            <h5 class="card-title wallet-info" onclick="toggleKeyVisibility(event, '${account.privateKey}')">
+                                Address: ${account.address} <span class="text-muted" style="font-size: smaller; cursor: pointer;">(点击查看私钥)</span>
+                            </h5>
+                            <p class="card-text d-none wallet-info">Private Key: ${account.privateKey}</p>
+                        </div>
+                    </div>
+                    `;
+
+                    document.getElementById("walletsInfo").appendChild(walletInfoDiv);
+                }
+
+                // 引入延时以避免卡死
+                await new Promise(resolve => setTimeout(resolve, 100));
+            }
+        }
+
+        function toggleKeyVisibility(event, privateKey) {
+            let keyElement = event.target.nextElementSibling;
+            keyElement.classList.toggle('d-none');
+        }
+
+        function generateWallets() {
+            shouldContinue = true;
+            const web3 = new Web3();
+            const matchContent = document.getElementById("matchContent").value.toLowerCase();
+            const matchPosition = document.getElementById("matchPosition").value;
+            const threadCount = parseInt(document.getElementById("threadCount").value, 10) || 1;
+
+            for (let i = 0; i < threadCount; i++) {
+                generateWallet(web3, matchContent, matchPosition).catch(error => console.error(error));
+            }
+        }
+
+        function stopGenerating() {
+            shouldContinue = false;
+        }
+
+        function clearInfo() {
+            document.getElementById("walletsInfo").innerHTML = "";
+            document.getElementById("generatedCount").innerText = "已生成: 0";
+            document.getElementById("matchedCount").innerText = "匹配成功: 0";
+            globalGeneratedCount = 0;
+            globalMatchedCount = 0;
+        }
+    </script>
+</body>
+
+</html>
